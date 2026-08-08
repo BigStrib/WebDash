@@ -1,6 +1,18 @@
 (function () {
     'use strict';
 
+    // ---- THE FIX: Use window.innerHeight instead of 100vh ----
+    // On iOS Safari, 100vh includes the area behind the URL bar and
+    // home indicator. window.innerHeight gives the ACTUAL visible pixels.
+    function setAppHeight() {
+        document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+    }
+    setAppHeight();
+    window.addEventListener('resize', function () { setAppHeight(); });
+    window.addEventListener('orientationchange', function () {
+        setTimeout(setAppHeight, 100);
+    });
+
     var STORAGE_KEY = 'dashboard_pages';
 
     var state = {

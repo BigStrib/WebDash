@@ -24,7 +24,7 @@
     --radius: 12px;
     --radius-sm: 8px;
     --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --sat: env(safe-area-inset-top, 0px);
+    --app-height: 100vh;
 }
 
 *,
@@ -36,27 +36,14 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 
- * THE FIX: position fixed on html AND body forces iOS to treat
- * the element as locked to the screen, bypassing all safe area
- * bottom inset calculations completely.
- */
 html {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
     background: #0a0a0a;
+    overflow: hidden;
 }
 
 body {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: var(--app-height);
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
         'Helvetica Neue', Arial, sans-serif;
@@ -75,7 +62,7 @@ body {
     top: 0;
     left: 0;
     width: var(--trigger-width);
-    height: 100%;
+    height: var(--app-height);
     background: linear-gradient(180deg,
         transparent 0%,
         rgba(220, 38, 38, 0.1) 30%,
@@ -128,8 +115,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: var(--app-height);
     background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
@@ -151,7 +138,7 @@ body {
     left: 0;
     width: var(--sidebar-width);
     max-width: 85vw;
-    height: 100%;
+    height: var(--app-height);
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border);
     z-index: 1002;
@@ -160,8 +147,6 @@ body {
     display: flex;
     flex-direction: column;
     box-shadow: 4px 0 30px var(--shadow);
-    /* Only top safe area — sidebar slides full height to bottom */
-    padding-top: var(--sat);
     overflow: hidden;
 }
 
@@ -367,24 +352,12 @@ body {
 
 /* ---- Canvas ---- */
 .canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: var(--app-height);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background: var(--bg-darkest);
-}
-
-/* Top safe area spacer ONLY — no bottom spacer at all */
-.canvas::before {
-    content: '';
-    display: block;
-    flex-shrink: 0;
-    height: var(--sat);
-    background: var(--bg-dark);
 }
 
 /* ---- Empty State ---- */
@@ -571,14 +544,13 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: var(--app-height);
     background: var(--bg-darkest);
     z-index: 2000;
     display: none;
     flex-direction: column;
     animation: fadeIn 0.3s ease;
-    padding-top: var(--sat);
 }
 
 .edit-overlay.active { display: flex; }
@@ -644,12 +616,9 @@ body {
     height: 3px;
     border-radius: 2px;
     z-index: 30;
-    background-image: repeating-linear-gradient(
-        90deg,
-        var(--accent) 0px,
-        var(--accent) 6px,
-        transparent 6px,
-        transparent 12px
+    background-image: repeating-linear-gradient(90deg,
+        var(--accent) 0px, var(--accent) 6px,
+        transparent 6px, transparent 12px
     );
     background-size: 24px 3px;
     animation: marchRight 0.4s linear infinite;
@@ -664,12 +633,9 @@ body {
     height: 3px;
     border-radius: 2px;
     z-index: 30;
-    background-image: repeating-linear-gradient(
-        90deg,
-        var(--accent) 0px,
-        var(--accent) 6px,
-        transparent 6px,
-        transparent 12px
+    background-image: repeating-linear-gradient(90deg,
+        var(--accent) 0px, var(--accent) 6px,
+        transparent 6px, transparent 12px
     );
     background-size: 24px 3px;
     animation: marchRight 0.4s linear infinite;
@@ -812,8 +778,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: var(--app-height);
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -877,8 +843,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: var(--app-height);
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
