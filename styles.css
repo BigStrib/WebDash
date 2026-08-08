@@ -25,6 +25,7 @@
     --radius-sm: 8px;
     --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --app-height: 100vh;
+    --status-bar: 0px;
 }
 
 *,
@@ -55,6 +56,14 @@ body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Status bar spacer - only has height in standalone PWA mode */
+.status-bar-spacer {
+    flex-shrink: 0;
+    height: var(--status-bar);
+    background: var(--bg-dark);
+    width: 100%;
+}
 
 /* ---- Sidebar Trigger ---- */
 .sidebar-trigger {
@@ -147,6 +156,7 @@ body {
     display: flex;
     flex-direction: column;
     box-shadow: 4px 0 30px var(--shadow);
+    padding-top: var(--status-bar);
     overflow: hidden;
 }
 

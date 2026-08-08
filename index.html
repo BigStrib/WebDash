@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="images/favi.png">
     <link rel="apple-touch-icon" sizes="180x180" href="images/icon512.png">
@@ -61,6 +63,7 @@
     </nav>
 
     <main class="canvas" id="canvas">
+        <div class="status-bar-spacer"></div>
         <div class="tabs-bar" id="tabsBar">
             <div class="tabs-nav" id="tabsNav">
                 <button class="tab-arrow tab-arrow-left" id="tabArrowLeft" aria-label="Previous tabs">
@@ -93,6 +96,7 @@
     </main>
 
     <div class="edit-overlay" id="editOverlay">
+        <div class="status-bar-spacer"></div>
         <div class="edit-header">
             <h2>Edit Layout</h2>
             <button class="btn btn-done" id="doneEditBtn">Done</button>

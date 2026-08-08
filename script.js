@@ -1,16 +1,39 @@
 (function () {
     'use strict';
 
-    // ---- THE FIX: Use window.innerHeight instead of 100vh ----
-    // On iOS Safari, 100vh includes the area behind the URL bar and
-    // home indicator. window.innerHeight gives the ACTUAL visible pixels.
+    // ---- VIEWPORT HEIGHT FIX ----
+    // On iOS, 100vh lies. window.innerHeight tells the truth.
+    // In standalone PWA mode, we also detect the status bar.
     function setAppHeight() {
-        document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+        var h = window.innerHeight;
+        document.documentElement.style.setProperty('--app-height', h + 'px');
+
+        // Detect if running as standalone PWA
+        var isStandalone = window.navigator.standalone === true ||
+            window.matchMedia('(display-mode: standalone)').matches;
+
+        if (isStandalone) {
+            // In standalone mode on iOS, the screen.height minus innerHeight
+            // at launch gives us the status bar size. We use a fixed known
+            // value as fallback since iOS status bar is typically 47-59px
+            // on notched phones, 20px on older ones.
+            // But the simplest reliable method: measure the difference
+            // between screen.availHeight and innerHeight on first load.
+            var statusBar = screen.height - h;
+            // Sanity check: status bar should be between 20-60px
+            if (statusBar > 60) statusBar = 47;
+            if (statusBar < 0) statusBar = 0;
+            document.documentElement.style.setProperty('--status-bar', statusBar + 'px');
+        } else {
+            document.documentElement.style.setProperty('--status-bar', '0px');
+        }
     }
+
     setAppHeight();
-    window.addEventListener('resize', function () { setAppHeight(); });
+    window.addEventListener('resize', setAppHeight);
     window.addEventListener('orientationchange', function () {
         setTimeout(setAppHeight, 100);
+        setTimeout(setAppHeight, 300);
     });
 
     var STORAGE_KEY = 'dashboard_pages';
