@@ -2,7 +2,6 @@
     'use strict';
 
     var STORAGE_KEY = 'dashboard_pages';
-    var TABS_PER_PAGE = 3;
 
     var state = {
         pages: [],
@@ -49,8 +48,6 @@
         return 3;
     }
 
-    // ---- Utilities ----
-
     function generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
     }
@@ -75,6 +72,10 @@
         var d = document.createElement('div');
         d.textContent = str;
         return d.innerHTML;
+    }
+
+    function isTouchDevice() {
+        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     }
 
     // ---- Storage ----
@@ -108,10 +109,10 @@
     // ---- Toast ----
 
     var toastTimer = null;
-    function showToast(message, type) {
+    function showToast(msg, type) {
         type = type || 'success';
         clearTimeout(toastTimer);
-        els.toast.textContent = message;
+        els.toast.textContent = msg;
         els.toast.className = 'toast ' + type;
         void els.toast.offsetWidth;
         els.toast.classList.add('show');
@@ -154,28 +155,22 @@
 
     // ---- Swipe ----
 
-    var swStartX = 0, swStartY = 0, swTime = 0, swActive = false;
-
+    var swSX = 0, swSY = 0, swT = 0, swA = false;
     document.addEventListener('touchstart', function (e) {
         var t = e.touches[0];
-        swStartX = t.clientX;
-        swStartY = t.clientY;
-        swTime = Date.now();
-        swActive = false;
-        if (!state.sidebarOpen && !state.editMode && swStartX < 35) swActive = true;
-        if (state.sidebarOpen) swActive = true;
+        swSX = t.clientX; swSY = t.clientY; swT = Date.now(); swA = false;
+        if (!state.sidebarOpen && !state.editMode && swSX < 35) swA = true;
+        if (state.sidebarOpen) swA = true;
     }, { passive: true });
 
     document.addEventListener('touchend', function (e) {
-        if (!swActive) return;
+        if (!swA) return;
         var t = e.changedTouches[0];
-        var dx = t.clientX - swStartX;
-        var dy = Math.abs(t.clientY - swStartY);
-        var dt = Date.now() - swTime;
+        var dx = t.clientX - swSX, dy = Math.abs(t.clientY - swSY), dt = Date.now() - swT;
         if (dy > Math.abs(dx)) return;
         if (!state.sidebarOpen && dx > 60 && dt < 500) openSidebar();
         if (state.sidebarOpen && dx < -60 && dt < 500) closeSidebar();
-        swActive = false;
+        swA = false;
     }, { passive: true });
 
     // ---- Page CRUD ----
@@ -207,9 +202,8 @@
             state.pages = state.pages.filter(function (p) { return p.id !== id; });
             var w = document.querySelector('.iframe-wrapper[data-id="' + id + '"]');
             if (w) w.remove();
-            if (state.activePageId === id) {
+            if (state.activePageId === id)
                 state.activePageId = state.pages.length > 0 ? state.pages[0].id : null;
-            }
             saveState();
             clampTabPage();
             renderAll();
@@ -252,8 +246,7 @@
     // ---- Tab Pagination ----
 
     function getMaxTabPage() {
-        var tpp = getTabsPerPage();
-        return Math.max(0, Math.ceil(state.pages.length / tpp) - 1);
+        return Math.max(0, Math.ceil(state.pages.length / getTabsPerPage()) - 1);
     }
 
     function clampTabPage() {
@@ -264,13 +257,12 @@
 
     function ensureActiveTabPage() {
         if (!state.activePageId) return;
-        var idx = -1;
         for (var i = 0; i < state.pages.length; i++) {
-            if (state.pages[i].id === state.activePageId) { idx = i; break; }
+            if (state.pages[i].id === state.activePageId) {
+                state.tabPage = Math.floor(i / getTabsPerPage());
+                return;
+            }
         }
-        if (idx === -1) return;
-        var tpp = getTabsPerPage();
-        state.tabPage = Math.floor(idx / tpp);
     }
 
     // ---- Rendering ----
@@ -284,11 +276,8 @@
     }
 
     function renderEmptyState() {
-        if (state.pages.length === 0) {
-            els.emptyState.classList.remove('hidden');
-        } else {
-            els.emptyState.classList.add('hidden');
-        }
+        if (state.pages.length === 0) els.emptyState.classList.remove('hidden');
+        else els.emptyState.classList.add('hidden');
     }
 
     function renderPagesList() {
@@ -315,28 +304,14 @@
 
     function renderIframes() {
         var existing = {};
+        els.iframeContainer.querySelectorAll('.iframe-wrapper').forEach(function (w) { existing[w.dataset.id] = w; });
+        state.pages.forEach(function (page) { if (!existing[page.id]) createIframeWrapper(page); });
         els.iframeContainer.querySelectorAll('.iframe-wrapper').forEach(function (w) {
-            existing[w.dataset.id] = w;
+            if (!state.pages.find(function (p) { return p.id === w.dataset.id; })) w.remove();
         });
-
-        state.pages.forEach(function (page) {
-            if (!existing[page.id]) {
-                createIframeWrapper(page);
-            }
-        });
-
         els.iframeContainer.querySelectorAll('.iframe-wrapper').forEach(function (w) {
-            if (!state.pages.find(function (p) { return p.id === w.dataset.id; })) {
-                w.remove();
-            }
-        });
-
-        els.iframeContainer.querySelectorAll('.iframe-wrapper').forEach(function (w) {
-            if (w.dataset.id === state.activePageId) {
-                w.classList.add('active');
-            } else {
-                w.classList.remove('active');
-            }
+            if (w.dataset.id === state.activePageId) w.classList.add('active');
+            else w.classList.remove('active');
         });
     }
 
@@ -344,48 +319,35 @@
         var wrapper = document.createElement('div');
         wrapper.className = 'iframe-wrapper';
         wrapper.dataset.id = page.id;
-
         var loading = document.createElement('div');
         loading.className = 'iframe-loading';
         loading.innerHTML = '<div class="spinner"></div><span>Loading ' + escapeHtml(page.name) + '…</span>';
-
         var iframe = document.createElement('iframe');
         iframe.src = page.url;
         iframe.title = page.name;
         iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen');
         iframe.setAttribute('allowfullscreen', '');
         iframe.setAttribute('loading', 'lazy');
-        // No sandbox — allows full interactivity (swipe, scroll, touch events inside embedded sites)
-
         iframe.addEventListener('load', function () { loading.classList.add('hidden'); });
         iframe.addEventListener('error', function () {
             loading.innerHTML =
                 '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>' +
                 '<span>Failed to load ' + escapeHtml(page.name) + '</span>';
         });
-
         wrapper.appendChild(loading);
         wrapper.appendChild(iframe);
         els.iframeContainer.appendChild(wrapper);
     }
 
     function renderTabs() {
-        if (state.pages.length <= 1) {
-            els.tabsBar.classList.remove('visible');
-            return;
-        }
-
+        if (state.pages.length <= 1) { els.tabsBar.classList.remove('visible'); return; }
         els.tabsBar.classList.add('visible');
-
         var tpp = getTabsPerPage();
         var totalPages = Math.ceil(state.pages.length / tpp);
         clampTabPage();
-
         var start = state.tabPage * tpp;
         var end = Math.min(start + tpp, state.pages.length);
-        var visiblePages = state.pages.slice(start, end);
-
-        // Arrows
+        var visible = state.pages.slice(start, end);
         if (totalPages > 1) {
             els.tabArrowLeft.classList.add('visible');
             els.tabArrowRight.classList.add('visible');
@@ -397,10 +359,8 @@
             els.tabArrowLeft.classList.remove('visible');
             els.tabArrowRight.classList.remove('visible');
         }
-
-        // Tabs
         els.tabsWindow.innerHTML = '';
-        visiblePages.forEach(function (page) {
+        visible.forEach(function (page) {
             var tab = document.createElement('div');
             tab.className = 'tab-item' + (page.id === state.activePageId ? ' active' : '');
             tab.textContent = page.name;
@@ -437,9 +397,26 @@
             card.className = 'edit-card';
             card.dataset.id = page.id;
             card.dataset.index = index;
+            card.setAttribute('draggable', 'true');
 
+            // Preview
+            var preview = document.createElement('div');
+            preview.className = 'edit-card-preview';
+            var letter = document.createElement('div');
+            letter.className = 'preview-letter';
+            letter.textContent = getInitial(page.name);
+            preview.appendChild(letter);
+
+            // Body
             var body = document.createElement('div');
             body.className = 'edit-card-body';
+
+            var info = document.createElement('div');
+            info.className = 'edit-card-info';
+            info.innerHTML = '<div class="edit-card-name">' + escapeHtml(page.name) + '</div><div class="edit-card-url">' + escapeHtml(page.url) + '</div>';
+
+            var actions = document.createElement('div');
+            actions.className = 'edit-card-actions';
 
             // Drag handle
             var dragBtn = document.createElement('button');
@@ -451,14 +428,7 @@
                 '<circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle>' +
                 '<circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>';
 
-            var info = document.createElement('div');
-            info.className = 'edit-card-info';
-            info.innerHTML = '<div class="edit-card-name">' + escapeHtml(page.name) + '</div><div class="edit-card-url">' + escapeHtml(page.url) + '</div>';
-
-            var actions = document.createElement('div');
-            actions.className = 'edit-card-actions';
-
-            // Edit button
+            // Edit
             var editBtn = document.createElement('button');
             editBtn.className = 'edit-card-btn edit-btn';
             editBtn.setAttribute('aria-label', 'Edit');
@@ -467,7 +437,7 @@
                 '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>' +
                 '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 
-            // Delete button
+            // Delete
             var deleteBtn = document.createElement('button');
             deleteBtn.className = 'edit-card-btn delete-btn';
             deleteBtn.setAttribute('aria-label', 'Remove');
@@ -476,26 +446,21 @@
                 '<polyline points="3 6 5 6 21 6"></polyline>' +
                 '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
 
+            actions.appendChild(dragBtn);
             actions.appendChild(editBtn);
             actions.appendChild(deleteBtn);
 
-            body.appendChild(dragBtn);
             body.appendChild(info);
             body.appendChild(actions);
+            card.appendChild(preview);
             card.appendChild(body);
 
-            // Edit click
-            editBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                openEditPageModal(page.id);
-            });
+            // Edit handler
+            editBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); openEditPageModal(page.id); });
+            editBtn.addEventListener('touchend', function (e) { e.preventDefault(); e.stopPropagation(); openEditPageModal(page.id); });
 
-            // Delete click — use touchend + click for reliable mobile
-            var deleteHandler = function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
+            // Delete handler
+            var delFn = function () {
                 removePage(page.id).then(function () {
                     if (state.editMode) {
                         if (state.pages.length === 0) exitEditMode();
@@ -503,14 +468,8 @@
                     }
                 });
             };
-
-            deleteBtn.addEventListener('click', deleteHandler);
-            deleteBtn.addEventListener('touchend', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                deleteHandler(e);
-            });
+            deleteBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); delFn(); });
+            deleteBtn.addEventListener('touchend', function (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); delFn(); });
 
             els.editGrid.appendChild(card);
         });
@@ -551,16 +510,49 @@
         var draggedIndex = -1;
         var touchActive = false;
         var touchTarget = null;
+        var touchDropPos = null;
         var longTimer = null;
+        var ghost = null;
+        var scrollInterval = null;
+
+        function clearIndicators() {
+            cards.forEach(function (c) {
+                c.classList.remove('drag-over', 'marching-above', 'marching-below');
+                var labels = c.querySelectorAll('.marching-label');
+                labels.forEach(function (l) { l.remove(); });
+            });
+        }
+
+        function removeGhost() {
+            if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+            ghost = null;
+        }
+
+        function stopAutoScroll() {
+            if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
+        }
+
+        function startAutoScroll(touchY) {
+            stopAutoScroll();
+            var grid = els.editGrid;
+            var rect = grid.getBoundingClientRect();
+            var edgeSize = 60;
+
+            scrollInterval = setInterval(function () {
+                if (!touchActive) { stopAutoScroll(); return; }
+                if (touchY < rect.top + edgeSize) {
+                    grid.scrollTop -= 8;
+                } else if (touchY > rect.bottom - edgeSize) {
+                    grid.scrollTop += 8;
+                }
+            }, 16);
+        }
 
         cards.forEach(function (card) {
-            // Mouse
-            card.setAttribute('draggable', 'true');
-
+            // ---- Desktop mouse drag (unchanged) ----
             card.addEventListener('dragstart', function (e) {
                 if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) {
-                    e.preventDefault();
-                    return;
+                    e.preventDefault(); return;
                 }
                 draggedCard = card;
                 draggedIndex = parseInt(card.dataset.index);
@@ -571,16 +563,21 @@
 
             card.addEventListener('dragend', function () {
                 card.classList.remove('dragging');
-                cards.forEach(function (c) { c.classList.remove('drag-over'); });
+                clearIndicators();
                 draggedCard = null;
             });
 
             card.addEventListener('dragover', function (e) {
                 e.preventDefault();
-                if (card !== draggedCard) card.classList.add('drag-over');
+                if (card !== draggedCard) {
+                    clearIndicators();
+                    card.classList.add('drag-over');
+                }
             });
 
-            card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
+            card.addEventListener('dragleave', function () {
+                card.classList.remove('drag-over');
+            });
 
             card.addEventListener('drop', function (e) {
                 e.preventDefault();
@@ -589,18 +586,18 @@
                 reorderPages(draggedIndex, parseInt(card.dataset.index));
             });
 
-            // Touch drag
+            // ---- Mobile touch drag with marching ants ----
             card.addEventListener('touchstart', function (e) {
                 if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) return;
 
                 if (e.target.closest('.drag-btn')) {
                     e.preventDefault();
-                    beginTouchDrag(card);
+                    beginTouchDrag(card, e.touches[0]);
                     return;
                 }
 
                 longTimer = setTimeout(function () {
-                    beginTouchDrag(card);
+                    beginTouchDrag(card, e.touches[0]);
                 }, 400);
             }, { passive: false });
 
@@ -610,61 +607,120 @@
                     return;
                 }
                 e.preventDefault();
+
                 var touch = e.touches[0];
+
+                // Move ghost
+                if (ghost) {
+                    ghost.style.left = (touch.clientX - 40) + 'px';
+                    ghost.style.top = (touch.clientY - 20) + 'px';
+                }
+
+                // Auto scroll near edges
+                startAutoScroll(touch.clientY);
+
+                // Find target
+                // Temporarily hide ghost so elementFromPoint hits cards
+                if (ghost) ghost.style.display = 'none';
                 var el = document.elementFromPoint(touch.clientX, touch.clientY);
-                cards.forEach(function (c) { c.classList.remove('drag-over'); });
+                if (ghost) ghost.style.display = '';
+
+                clearIndicators();
+
                 if (el) {
                     var tc = el.closest('.edit-card');
                     if (tc && tc !== draggedCard) {
-                        tc.classList.add('drag-over');
+                        var rect = tc.getBoundingClientRect();
+                        var midY = rect.top + rect.height / 2;
+                        var targetIdx = parseInt(tc.dataset.index);
+                        var pageName = state.pages[targetIdx] ? state.pages[targetIdx].name : '';
+
+                        if (touch.clientY < midY) {
+                            tc.classList.add('marching-above');
+                            touchDropPos = 'above';
+                            // Add label
+                            var lbl = document.createElement('div');
+                            lbl.className = 'marching-label above';
+                            lbl.textContent = 'Drop above "' + pageName + '"';
+                            tc.appendChild(lbl);
+                        } else {
+                            tc.classList.add('marching-below');
+                            touchDropPos = 'below';
+                            var lbl2 = document.createElement('div');
+                            lbl2.className = 'marching-label below';
+                            lbl2.textContent = 'Drop below "' + pageName + '"';
+                            tc.appendChild(lbl2);
+                        }
                         touchTarget = tc;
                     } else {
                         touchTarget = null;
+                        touchDropPos = null;
                     }
                 }
             }, { passive: false });
 
             card.addEventListener('touchend', function (e) {
                 clearTimeout(longTimer);
+                stopAutoScroll();
                 if (!touchActive) return;
-                // Prevent this from triggering button clicks
                 e.preventDefault();
                 touchActive = false;
                 if (draggedCard) draggedCard.classList.remove('dragging');
-                cards.forEach(function (c) { c.classList.remove('drag-over'); });
+                clearIndicators();
+                removeGhost();
+
                 if (touchTarget && touchTarget !== draggedCard) {
-                    reorderPages(draggedIndex, parseInt(touchTarget.dataset.index));
+                    var targetIndex = parseInt(touchTarget.dataset.index);
+                    if (touchDropPos === 'below') targetIndex++;
+                    if (draggedIndex < targetIndex) targetIndex--;
+                    targetIndex = Math.max(0, Math.min(targetIndex, state.pages.length - 1));
+                    reorderPages(draggedIndex, targetIndex);
                 }
+
                 draggedCard = null;
                 touchTarget = null;
+                touchDropPos = null;
             });
 
             card.addEventListener('touchcancel', function () {
                 clearTimeout(longTimer);
+                stopAutoScroll();
                 touchActive = false;
                 if (draggedCard) draggedCard.classList.remove('dragging');
-                cards.forEach(function (c) { c.classList.remove('drag-over'); });
+                clearIndicators();
+                removeGhost();
                 draggedCard = null;
                 touchTarget = null;
+                touchDropPos = null;
             });
-
-            function beginTouchDrag(src) {
-                touchActive = true;
-                draggedCard = src;
-                draggedIndex = parseInt(src.dataset.index);
-                src.classList.add('dragging');
-                if (navigator.vibrate) navigator.vibrate(30);
-            }
         });
-    }
 
-    function reorderPages(from, to) {
-        if (from === to) return;
-        var m = state.pages.splice(from, 1)[0];
-        state.pages.splice(to, 0, m);
-        saveState();
-        renderEditGrid();
-        showToast('Order updated');
+        function beginTouchDrag(src, touch) {
+            touchActive = true;
+            draggedCard = src;
+            draggedIndex = parseInt(src.dataset.index);
+            src.classList.add('dragging');
+            if (navigator.vibrate) navigator.vibrate(30);
+
+            // Create floating ghost
+            var pageName = state.pages[draggedIndex] ? state.pages[draggedIndex].name : '';
+            ghost = document.createElement('div');
+            ghost.className = 'drag-ghost';
+            ghost.textContent = '↕ ' + pageName;
+            ghost.style.left = (touch.clientX - 40) + 'px';
+            ghost.style.top = (touch.clientY - 20) + 'px';
+            document.body.appendChild(ghost);
+        }
+
+        function reorderPages(from, to) {
+            if (from === to) return;
+            var m = state.pages.splice(from, 1)[0];
+            state.pages.splice(to, 0, m);
+            saveState();
+            renderEditGrid();
+            renderTabs();
+            showToast('Moved to position ' + (to + 1));
+        }
     }
 
     // ---- Init ----
@@ -696,7 +752,6 @@
         els.editPageName.addEventListener('keydown', function (e) { if (e.key === 'Enter') els.editPageUrl.focus(); });
         els.editPageUrl.addEventListener('keydown', function (e) { if (e.key === 'Enter') saveEditPageChanges(); });
 
-        // Tab arrows
         els.tabArrowLeft.addEventListener('click', function () {
             if (state.tabPage > 0) { state.tabPage--; renderTabs(); }
         });
@@ -704,14 +759,10 @@
             if (state.tabPage < getMaxTabPage()) { state.tabPage++; renderTabs(); }
         });
 
-        // Recalc tabs on resize
         var resizeTimer;
         window.addEventListener('resize', function () {
             clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(function () {
-                clampTabPage();
-                renderTabs();
-            }, 150);
+            resizeTimer = setTimeout(function () { clampTabPage(); renderTabs(); }, 150);
         });
 
         document.addEventListener('keydown', function (e) {
