@@ -2,15 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a0a0a">
     <link rel="apple-touch-icon" href="images/favi.png">
     <link rel="apple-touch-icon" sizes="180x180" href="images/icon512.png">
     <title>Web Dash</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="images/favi.png">
 </head>
 <body>
@@ -63,7 +64,6 @@
     </nav>
 
     <main class="canvas" id="canvas">
-        <div class="status-bar-spacer"></div>
         <div class="tabs-bar" id="tabsBar">
             <div class="tabs-nav" id="tabsNav">
                 <button class="tab-arrow tab-arrow-left" id="tabArrowLeft" aria-label="Previous tabs">
@@ -79,7 +79,6 @@
                 </button>
             </div>
         </div>
-
         <div class="empty-state" id="emptyState">
             <div class="empty-icon">
                 <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
@@ -91,12 +90,10 @@
             <h2>No websites added yet</h2>
             <p>Swipe from the left edge or tap the side strip to open the menu and add your first website.</p>
         </div>
-
         <div class="iframe-container" id="iframeContainer"></div>
     </main>
 
     <div class="edit-overlay" id="editOverlay">
-        <div class="status-bar-spacer"></div>
         <div class="edit-header">
             <h2>Edit Layout</h2>
             <button class="btn btn-done" id="doneEditBtn">Done</button>

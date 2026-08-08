@@ -1,40 +1,9 @@
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(function () {});
+}
+
 (function () {
     'use strict';
-
-    // ---- VIEWPORT HEIGHT FIX ----
-    // On iOS, 100vh lies. window.innerHeight tells the truth.
-    // In standalone PWA mode, we also detect the status bar.
-    function setAppHeight() {
-        var h = window.innerHeight;
-        document.documentElement.style.setProperty('--app-height', h + 'px');
-
-        // Detect if running as standalone PWA
-        var isStandalone = window.navigator.standalone === true ||
-            window.matchMedia('(display-mode: standalone)').matches;
-
-        if (isStandalone) {
-            // In standalone mode on iOS, the screen.height minus innerHeight
-            // at launch gives us the status bar size. We use a fixed known
-            // value as fallback since iOS status bar is typically 47-59px
-            // on notched phones, 20px on older ones.
-            // But the simplest reliable method: measure the difference
-            // between screen.availHeight and innerHeight on first load.
-            var statusBar = screen.height - h;
-            // Sanity check: status bar should be between 20-60px
-            if (statusBar > 60) statusBar = 47;
-            if (statusBar < 0) statusBar = 0;
-            document.documentElement.style.setProperty('--status-bar', statusBar + 'px');
-        } else {
-            document.documentElement.style.setProperty('--status-bar', '0px');
-        }
-    }
-
-    setAppHeight();
-    window.addEventListener('resize', setAppHeight);
-    window.addEventListener('orientationchange', function () {
-        setTimeout(setAppHeight, 100);
-        setTimeout(setAppHeight, 300);
-    });
 
     var STORAGE_KEY = 'dashboard_pages';
 
@@ -109,8 +78,6 @@
         return d.innerHTML;
     }
 
-    // ---- Storage ----
-
     function saveState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -137,8 +104,6 @@
         }
     }
 
-    // ---- Toast ----
-
     var toastTimer = null;
     function showToast(msg, type) {
         type = type || 'success';
@@ -149,8 +114,6 @@
         els.toast.classList.add('show');
         toastTimer = setTimeout(function () { els.toast.classList.remove('show'); }, 2500);
     }
-
-    // ---- Confirm ----
 
     function showConfirm(title, message) {
         return new Promise(function (resolve) {
@@ -168,8 +131,6 @@
         });
     }
 
-    // ---- Sidebar ----
-
     function openSidebar() {
         state.sidebarOpen = true;
         els.sidebar.classList.add('open');
@@ -183,8 +144,6 @@
         els.overlay.classList.remove('active');
         els.sidebarTrigger.classList.remove('hidden');
     }
-
-    // ---- Swipe ----
 
     var swSX = 0, swSY = 0, swT = 0, swA = false;
     document.addEventListener('touchstart', function (e) {
@@ -203,8 +162,6 @@
         if (state.sidebarOpen && dx < -60 && dt < 500) closeSidebar();
         swA = false;
     }, { passive: true });
-
-    // ---- Page CRUD ----
 
     function addPage(name, url) {
         var nu = normalizeUrl(url);
@@ -274,8 +231,6 @@
         renderPagesList();
     }
 
-    // ---- Tab Pagination ----
-
     function getMaxTabPage() {
         return Math.max(0, Math.ceil(state.pages.length / getTabsPerPage()) - 1);
     }
@@ -295,8 +250,6 @@
             }
         }
     }
-
-    // ---- Rendering ----
 
     function renderAll() {
         renderEmptyState();
@@ -400,8 +353,6 @@
         });
     }
 
-    // ---- Edit Mode ----
-
     function enterEditMode() {
         state.editMode = true;
         els.editOverlay.classList.add('active');
@@ -437,38 +388,23 @@
 
             var body = document.createElement('div');
             body.className = 'edit-card-body';
-
             var info = document.createElement('div');
             info.className = 'edit-card-info';
             info.innerHTML = '<div class="edit-card-name">' + escapeHtml(page.name) + '</div><div class="edit-card-url">' + escapeHtml(page.url) + '</div>';
-
             var actions = document.createElement('div');
             actions.className = 'edit-card-actions';
 
             var dragBtn = document.createElement('button');
             dragBtn.className = 'edit-card-btn drag-btn';
-            dragBtn.setAttribute('aria-label', 'Drag to reorder');
-            dragBtn.innerHTML =
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">' +
-                '<circle cx="9" cy="5" r="1.8"></circle><circle cx="15" cy="5" r="1.8"></circle>' +
-                '<circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle>' +
-                '<circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>';
+            dragBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.8"/><circle cx="15" cy="5" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="19" r="1.8"/><circle cx="15" cy="19" r="1.8"/></svg>';
 
             var editBtn = document.createElement('button');
             editBtn.className = 'edit-card-btn edit-btn';
-            editBtn.setAttribute('aria-label', 'Edit');
-            editBtn.innerHTML =
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>' +
-                '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+            editBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
             var deleteBtn = document.createElement('button');
             deleteBtn.className = 'edit-card-btn delete-btn';
-            deleteBtn.setAttribute('aria-label', 'Remove');
-            deleteBtn.innerHTML =
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
-                '<polyline points="3 6 5 6 21 6"></polyline>' +
-                '<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+            deleteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
             actions.appendChild(dragBtn);
             actions.appendChild(editBtn);
@@ -494,11 +430,8 @@
 
             els.editGrid.appendChild(card);
         });
-
         setupDragAndDrop();
     }
-
-    // ---- Edit Modal ----
 
     function openEditPageModal(id) {
         var page = state.pages.find(function (p) { return p.id === id; });
@@ -523,18 +456,9 @@
         }
     }
 
-    // ---- Drag & Drop ----
-
     function setupDragAndDrop() {
         var cards = els.editGrid.querySelectorAll('.edit-card');
-        var draggedCard = null;
-        var draggedIndex = -1;
-        var touchActive = false;
-        var touchTarget = null;
-        var touchDropPos = null;
-        var longTimer = null;
-        var ghost = null;
-        var scrollInterval = null;
+        var draggedCard = null, draggedIndex = -1, touchActive = false, touchTarget = null, touchDropPos = null, longTimer = null, ghost = null, scrollInterval = null;
 
         function clearIndicators() {
             cards.forEach(function (c) {
@@ -542,21 +466,11 @@
                 c.querySelectorAll('.marching-label').forEach(function (l) { l.remove(); });
             });
         }
-
-        function removeGhost() {
-            if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-            ghost = null;
-        }
-
-        function stopAutoScroll() {
-            if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; }
-        }
-
+        function removeGhost() { if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost); ghost = null; }
+        function stopAutoScroll() { if (scrollInterval) { clearInterval(scrollInterval); scrollInterval = null; } }
         function startAutoScroll(touchY) {
             stopAutoScroll();
-            var grid = els.editGrid;
-            var rect = grid.getBoundingClientRect();
-            var edgeSize = 60;
+            var grid = els.editGrid, rect = grid.getBoundingClientRect(), edgeSize = 60;
             scrollInterval = setInterval(function () {
                 if (!touchActive) { stopAutoScroll(); return; }
                 if (touchY < rect.top + edgeSize) grid.scrollTop -= 8;
@@ -567,40 +481,17 @@
         cards.forEach(function (card) {
             card.addEventListener('dragstart', function (e) {
                 if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) { e.preventDefault(); return; }
-                draggedCard = card;
-                draggedIndex = parseInt(card.dataset.index);
-                card.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', card.dataset.id);
+                draggedCard = card; draggedIndex = parseInt(card.dataset.index); card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', card.dataset.id);
             });
-
-            card.addEventListener('dragend', function () {
-                card.classList.remove('dragging');
-                clearIndicators();
-                draggedCard = null;
-            });
-
-            card.addEventListener('dragover', function (e) {
-                e.preventDefault();
-                if (card !== draggedCard) { clearIndicators(); card.classList.add('drag-over'); }
-            });
-
+            card.addEventListener('dragend', function () { card.classList.remove('dragging'); clearIndicators(); draggedCard = null; });
+            card.addEventListener('dragover', function (e) { e.preventDefault(); if (card !== draggedCard) { clearIndicators(); card.classList.add('drag-over'); } });
             card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
-
-            card.addEventListener('drop', function (e) {
-                e.preventDefault();
-                card.classList.remove('drag-over');
-                if (card === draggedCard || !draggedCard) return;
-                reorderPages(draggedIndex, parseInt(card.dataset.index));
-            });
+            card.addEventListener('drop', function (e) { e.preventDefault(); card.classList.remove('drag-over'); if (card === draggedCard || !draggedCard) return; reorderPages(draggedIndex, parseInt(card.dataset.index)); });
 
             card.addEventListener('touchstart', function (e) {
                 if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) return;
-                if (e.target.closest('.drag-btn')) {
-                    e.preventDefault();
-                    beginTouchDrag(card, e.touches[0]);
-                    return;
-                }
+                if (e.target.closest('.drag-btn')) { e.preventDefault(); beginTouchDrag(card, e.touches[0]); return; }
                 longTimer = setTimeout(function () { beginTouchDrag(card, e.touches[0]); }, 400);
             }, { passive: false });
 
@@ -608,10 +499,7 @@
                 if (!touchActive) { clearTimeout(longTimer); return; }
                 e.preventDefault();
                 var touch = e.touches[0];
-                if (ghost) {
-                    ghost.style.left = (touch.clientX - 40) + 'px';
-                    ghost.style.top = (touch.clientY - 20) + 'px';
-                }
+                if (ghost) { ghost.style.left = (touch.clientX - 40) + 'px'; ghost.style.top = (touch.clientY - 20) + 'px'; }
                 startAutoScroll(touch.clientY);
                 if (ghost) ghost.style.display = 'none';
                 var el = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -620,42 +508,26 @@
                 if (el) {
                     var tc = el.closest('.edit-card');
                     if (tc && tc !== draggedCard) {
-                        var rect = tc.getBoundingClientRect();
-                        var midY = rect.top + rect.height / 2;
-                        var targetIdx = parseInt(tc.dataset.index);
-                        var pageName = state.pages[targetIdx] ? state.pages[targetIdx].name : '';
+                        var rect = tc.getBoundingClientRect(), midY = rect.top + rect.height / 2;
+                        var targetIdx = parseInt(tc.dataset.index), pageName = state.pages[targetIdx] ? state.pages[targetIdx].name : '';
                         if (touch.clientY < midY) {
-                            tc.classList.add('marching-above');
-                            touchDropPos = 'above';
-                            var lbl = document.createElement('div');
-                            lbl.className = 'marching-label above';
-                            lbl.textContent = 'Drop above "' + pageName + '"';
-                            tc.appendChild(lbl);
+                            tc.classList.add('marching-above'); touchDropPos = 'above';
+                            var lbl = document.createElement('div'); lbl.className = 'marching-label above'; lbl.textContent = 'Drop above "' + pageName + '"'; tc.appendChild(lbl);
                         } else {
-                            tc.classList.add('marching-below');
-                            touchDropPos = 'below';
-                            var lbl2 = document.createElement('div');
-                            lbl2.className = 'marching-label below';
-                            lbl2.textContent = 'Drop below "' + pageName + '"';
-                            tc.appendChild(lbl2);
+                            tc.classList.add('marching-below'); touchDropPos = 'below';
+                            var lbl2 = document.createElement('div'); lbl2.className = 'marching-label below'; lbl2.textContent = 'Drop below "' + pageName + '"'; tc.appendChild(lbl2);
                         }
                         touchTarget = tc;
-                    } else {
-                        touchTarget = null;
-                        touchDropPos = null;
-                    }
+                    } else { touchTarget = null; touchDropPos = null; }
                 }
             }, { passive: false });
 
             card.addEventListener('touchend', function (e) {
-                clearTimeout(longTimer);
-                stopAutoScroll();
+                clearTimeout(longTimer); stopAutoScroll();
                 if (!touchActive) return;
-                e.preventDefault();
-                touchActive = false;
+                e.preventDefault(); touchActive = false;
                 if (draggedCard) draggedCard.classList.remove('dragging');
-                clearIndicators();
-                removeGhost();
+                clearIndicators(); removeGhost();
                 if (touchTarget && touchTarget !== draggedCard) {
                     var targetIndex = parseInt(touchTarget.dataset.index);
                     if (touchDropPos === 'below') targetIndex++;
@@ -663,51 +535,34 @@
                     targetIndex = Math.max(0, Math.min(targetIndex, state.pages.length - 1));
                     reorderPages(draggedIndex, targetIndex);
                 }
-                draggedCard = null;
-                touchTarget = null;
-                touchDropPos = null;
+                draggedCard = null; touchTarget = null; touchDropPos = null;
             });
 
             card.addEventListener('touchcancel', function () {
-                clearTimeout(longTimer);
-                stopAutoScroll();
-                touchActive = false;
+                clearTimeout(longTimer); stopAutoScroll(); touchActive = false;
                 if (draggedCard) draggedCard.classList.remove('dragging');
-                clearIndicators();
-                removeGhost();
-                draggedCard = null;
-                touchTarget = null;
-                touchDropPos = null;
+                clearIndicators(); removeGhost(); draggedCard = null; touchTarget = null; touchDropPos = null;
             });
         });
 
         function beginTouchDrag(src, touch) {
-            touchActive = true;
-            draggedCard = src;
-            draggedIndex = parseInt(src.dataset.index);
+            touchActive = true; draggedCard = src; draggedIndex = parseInt(src.dataset.index);
             src.classList.add('dragging');
             if (navigator.vibrate) navigator.vibrate(30);
             var pageName = state.pages[draggedIndex] ? state.pages[draggedIndex].name : '';
-            ghost = document.createElement('div');
-            ghost.className = 'drag-ghost';
+            ghost = document.createElement('div'); ghost.className = 'drag-ghost';
             ghost.textContent = '\u2195 ' + pageName;
-            ghost.style.left = (touch.clientX - 40) + 'px';
-            ghost.style.top = (touch.clientY - 20) + 'px';
+            ghost.style.left = (touch.clientX - 40) + 'px'; ghost.style.top = (touch.clientY - 20) + 'px';
             document.body.appendChild(ghost);
         }
 
         function reorderPages(from, to) {
             if (from === to) return;
-            var m = state.pages.splice(from, 1)[0];
-            state.pages.splice(to, 0, m);
-            saveState();
-            renderEditGrid();
-            renderTabs();
+            var m = state.pages.splice(from, 1)[0]; state.pages.splice(to, 0, m);
+            saveState(); renderEditGrid(); renderTabs();
             showToast('Moved to position ' + (to + 1));
         }
     }
-
-    // ---- Init ----
 
     function init() {
         loadState();
@@ -718,16 +573,13 @@
         els.sidebarTrigger.addEventListener('touchend', function (e) { e.preventDefault(); openSidebar(); });
         els.closeSidebar.addEventListener('click', closeSidebar);
         els.overlay.addEventListener('click', closeSidebar);
-
         els.addUrlBtn.addEventListener('click', function () { addPage(els.urlName.value, els.urlInput.value); });
         els.urlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') addPage(els.urlName.value, els.urlInput.value); });
         els.urlName.addEventListener('keydown', function (e) { if (e.key === 'Enter') els.urlInput.focus(); });
-
         els.editModeBtn.addEventListener('click', function () {
             if (state.pages.length === 0) { showToast('Add some websites first', 'error'); return; }
             enterEditMode();
         });
-
         els.doneEditBtn.addEventListener('click', exitEditMode);
         els.closeEditModal.addEventListener('click', closeEditPageModal);
         els.cancelEditPage.addEventListener('click', closeEditPageModal);
@@ -735,13 +587,8 @@
         els.editPageModal.addEventListener('click', function (e) { if (e.target === els.editPageModal) closeEditPageModal(); });
         els.editPageName.addEventListener('keydown', function (e) { if (e.key === 'Enter') els.editPageUrl.focus(); });
         els.editPageUrl.addEventListener('keydown', function (e) { if (e.key === 'Enter') saveEditPageChanges(); });
-
-        els.tabArrowLeft.addEventListener('click', function () {
-            if (state.tabPage > 0) { state.tabPage--; renderTabs(); }
-        });
-        els.tabArrowRight.addEventListener('click', function () {
-            if (state.tabPage < getMaxTabPage()) { state.tabPage++; renderTabs(); }
-        });
+        els.tabArrowLeft.addEventListener('click', function () { if (state.tabPage > 0) { state.tabPage--; renderTabs(); } });
+        els.tabArrowRight.addEventListener('click', function () { if (state.tabPage < getMaxTabPage()) { state.tabPage++; renderTabs(); } });
 
         var resizeTimer;
         window.addEventListener('resize', function () {
@@ -760,5 +607,4 @@
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
-
 })();
