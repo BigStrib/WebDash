@@ -2,20 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Web Dash</title>
+    <title>Web Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-	
-	
-	
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-	
-	<link rel="icon" type="image/png" href="images/favi.png">
-	<link rel="manifest" href="manifest.json">
-	
 </head>
 <body>
     <!-- Sidebar Trigger Strip -->
@@ -77,6 +69,24 @@
 
     <!-- Main Canvas -->
     <main class="canvas" id="canvas">
+        <!-- Top Tabs Bar -->
+        <div class="tabs-bar" id="tabsBar">
+            <div class="tabs-nav" id="tabsNav">
+                <button class="tab-arrow tab-arrow-left" id="tabArrowLeft" aria-label="Previous tabs">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <div class="tabs-window" id="tabsWindow"></div>
+                <button class="tab-arrow tab-arrow-right" id="tabArrowRight" aria-label="Next tabs">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 6 15 12 9 18"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Empty State -->
         <div class="empty-state" id="emptyState">
             <div class="empty-icon">
                 <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round">
@@ -89,8 +99,8 @@
             <p>Swipe from the left edge or tap the side strip to open the menu and add your first website.</p>
         </div>
 
+        <!-- Iframe container -->
         <div class="iframe-container" id="iframeContainer"></div>
-        <div class="tabs-bar" id="tabsBar"></div>
     </main>
 
     <!-- Edit Mode Overlay -->

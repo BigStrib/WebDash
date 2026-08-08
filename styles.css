@@ -1,7 +1,7 @@
 :root {
     --sidebar-width: 320px;
     --trigger-width: 6px;
-    --tabs-height: 30px;
+    --tabs-height: 32px;
     --accent: #dc2626;
     --accent-hover: #b91c1c;
     --accent-light: rgba(220, 38, 38, 0.12);
@@ -24,6 +24,8 @@
     --radius: 12px;
     --radius-sm: 8px;
     --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
 }
 
 *,
@@ -47,7 +49,6 @@ body {
     background: var(--bg-darkest);
     color: var(--text-primary);
     touch-action: manipulation;
-    padding-top: env(safe-area-inset-top, 0px);
 }
 
 ::-webkit-scrollbar {
@@ -66,7 +67,7 @@ body {
 /* ---- Sidebar Trigger ---- */
 .sidebar-trigger {
     position: fixed;
-    top: env(safe-area-inset-top, 0px);
+    top: 0;
     left: 0;
     width: var(--trigger-width);
     bottom: 0;
@@ -154,7 +155,7 @@ body {
     display: flex;
     flex-direction: column;
     box-shadow: 4px 0 30px var(--shadow);
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--sat);
 }
 
 .sidebar.open {
@@ -395,12 +396,23 @@ body {
 
 /* ---- Canvas ---- */
 .canvas {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+/* ---- Status bar spacer ---- */
+.canvas::before {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    height: var(--sat);
+    background: var(--bg-dark);
 }
 
 /* ---- Empty State ---- */
@@ -413,6 +425,7 @@ body {
     padding: 40px 20px;
     max-width: 400px;
     animation: fadeInUp 0.6s ease;
+    z-index: 1;
 }
 
 .empty-state.hidden {
@@ -437,6 +450,107 @@ body {
     line-height: 1.6;
 }
 
+/* ---- Tabs Bar (Top, directly under status bar) ---- */
+.tabs-bar {
+    width: 100%;
+    flex-shrink: 0;
+    background: var(--bg-dark);
+    display: none;
+    z-index: 10;
+}
+
+.tabs-bar.visible {
+    display: block;
+}
+
+.tabs-nav {
+    display: flex;
+    align-items: stretch;
+    height: var(--tabs-height);
+}
+
+.tab-arrow {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    flex-shrink: 0;
+    background: var(--bg-dark);
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+    touch-action: manipulation;
+    padding: 0;
+}
+
+.tab-arrow.visible {
+    display: flex;
+}
+
+.tab-arrow:hover,
+.tab-arrow:active {
+    color: var(--accent);
+    background: var(--bg-card);
+}
+
+.tabs-window {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: stretch;
+}
+
+.tab-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    padding: 0 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    letter-spacing: 0.2px;
+    position: relative;
+    border: none;
+    background: none;
+}
+
+.tab-item::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: var(--border);
+}
+
+.tab-item:last-child::after {
+    display: none;
+}
+
+.tab-item:hover,
+.tab-item:active {
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.tab-item.active {
+    color: var(--accent);
+    font-weight: 600;
+    background: var(--accent-light);
+}
+
 /* ---- Iframe Container ---- */
 .iframe-container {
     width: 100%;
@@ -451,14 +565,13 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    visibility: hidden;
+    z-index: 0;
 }
 
 .iframe-wrapper.active {
-    opacity: 1;
-    pointer-events: auto;
+    visibility: visible;
+    z-index: 1;
 }
 
 .iframe-wrapper iframe {
@@ -466,6 +579,7 @@ body {
     height: 100%;
     border: none;
     background: #fff;
+    display: block;
 }
 
 .iframe-loading {
@@ -501,74 +615,6 @@ body {
     font-size: 0.85rem;
 }
 
-/* ---- Tabs Bar ---- */
-.tabs-bar {
-    width: 100%;
-    height: var(--tabs-height);
-    flex-shrink: 0;
-    background: var(--bg-dark);
-    border-top: 1px solid var(--border);
-    display: none;
-    align-items: stretch;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-}
-
-.tabs-bar::-webkit-scrollbar {
-    display: none;
-}
-
-.tabs-bar.visible {
-    display: flex;
-}
-
-.tab-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 12px;
-    white-space: nowrap;
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s ease, border-color 0.15s ease;
-    flex-shrink: 0;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
-    letter-spacing: 0.2px;
-    position: relative;
-}
-
-.tab-item::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 25%;
-    height: 50%;
-    width: 1px;
-    background: var(--border);
-}
-
-.tab-item:last-child::after {
-    display: none;
-}
-
-.tab-item:hover,
-.tab-item:active {
-    color: var(--text-secondary);
-}
-
-.tab-item.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-    font-weight: 600;
-}
-
 /* ---- Edit Overlay ---- */
 .edit-overlay {
     position: fixed;
@@ -581,7 +627,7 @@ body {
     display: none;
     flex-direction: column;
     animation: fadeIn 0.3s ease;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--sat);
 }
 
 .edit-overlay.active {
@@ -608,10 +654,9 @@ body {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -622,46 +667,32 @@ body {
     overflow: hidden;
     position: relative;
     transition: var(--transition);
-    touch-action: manipulation;
+    touch-action: pan-y;
     user-select: none;
     -webkit-user-select: none;
 }
 
 .edit-card.dragging {
     opacity: 0.4;
-    transform: scale(0.95);
+    transform: scale(0.97);
     border-color: var(--accent);
 }
 
 .edit-card.drag-over {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-glow);
-    transform: scale(1.02);
-}
-
-.edit-card-preview {
-    width: 100%;
-    height: 120px;
-    background: var(--bg-input);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.edit-card-preview .preview-letter {
-    font-size: 2.8rem;
-    font-weight: 700;
-    color: var(--accent);
-    opacity: 0.2;
 }
 
 .edit-card-body {
-    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    gap: 12px;
 }
 
 .edit-card-info {
-    margin-bottom: 12px;
+    flex: 1;
+    min-width: 0;
 }
 
 .edit-card-name {
@@ -674,17 +705,18 @@ body {
 }
 
 .edit-card-url {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-top: 3px;
+    margin-top: 2px;
 }
 
 .edit-card-actions {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .edit-card-btn {
@@ -699,9 +731,11 @@ body {
     align-items: center;
     justify-content: center;
     touch-action: manipulation;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .edit-card-btn.drag-btn {
@@ -726,9 +760,14 @@ body {
     color: var(--accent);
 }
 
+.edit-card-btn.delete-btn {
+    color: var(--danger);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
 .edit-card-btn.delete-btn:hover,
 .edit-card-btn.delete-btn:active {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.15);
     border-color: var(--danger);
     color: var(--danger);
 }
@@ -959,16 +998,6 @@ body {
         --sidebar-width: 300px;
     }
 
-    .edit-grid {
-        grid-template-columns: 1fr;
-        padding: 16px;
-        gap: 12px;
-    }
-
-    .edit-card-preview {
-        height: 90px;
-    }
-
     .sidebar-content {
         padding: 16px;
     }
@@ -978,20 +1007,19 @@ body {
     }
 
     .tab-item {
-        padding: 0 10px;
         font-size: 0.65rem;
     }
 }
 
 @media (min-width: 768px) {
-    .edit-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    :root {
+        --tabs-per-page: 5;
     }
 }
 
 @media (min-width: 1200px) {
-    .edit-grid {
-        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    :root {
+        --tabs-per-page: 8;
     }
 }
 
@@ -1011,12 +1039,10 @@ body {
     }
 
     .tab-item {
-        padding: 0 14px;
-        min-width: 44px;
+        min-height: 32px;
     }
 
-    .edit-card-btn {
-        width: 46px;
-        height: 46px;
+    .tab-arrow {
+        width: 36px;
     }
 }
