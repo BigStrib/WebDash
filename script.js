@@ -74,10 +74,6 @@
         return d.innerHTML;
     }
 
-    function isTouchDevice() {
-        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    }
-
     // ---- Storage ----
 
     function saveState() {
@@ -321,7 +317,7 @@
         wrapper.dataset.id = page.id;
         var loading = document.createElement('div');
         loading.className = 'iframe-loading';
-        loading.innerHTML = '<div class="spinner"></div><span>Loading ' + escapeHtml(page.name) + '…</span>';
+        loading.innerHTML = '<div class="spinner"></div><span>Loading ' + escapeHtml(page.name) + '\u2026</span>';
         var iframe = document.createElement('iframe');
         iframe.src = page.url;
         iframe.title = page.name;
@@ -389,9 +385,7 @@
             els.editGrid.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted);"><p>No websites to edit.</p></div>';
             return;
         }
-
         els.editGrid.innerHTML = '';
-
         state.pages.forEach(function (page, index) {
             var card = document.createElement('div');
             card.className = 'edit-card';
@@ -399,7 +393,6 @@
             card.dataset.index = index;
             card.setAttribute('draggable', 'true');
 
-            // Preview
             var preview = document.createElement('div');
             preview.className = 'edit-card-preview';
             var letter = document.createElement('div');
@@ -407,7 +400,6 @@
             letter.textContent = getInitial(page.name);
             preview.appendChild(letter);
 
-            // Body
             var body = document.createElement('div');
             body.className = 'edit-card-body';
 
@@ -418,7 +410,6 @@
             var actions = document.createElement('div');
             actions.className = 'edit-card-actions';
 
-            // Drag handle
             var dragBtn = document.createElement('button');
             dragBtn.className = 'edit-card-btn drag-btn';
             dragBtn.setAttribute('aria-label', 'Drag to reorder');
@@ -428,7 +419,6 @@
                 '<circle cx="9" cy="12" r="1.8"></circle><circle cx="15" cy="12" r="1.8"></circle>' +
                 '<circle cx="9" cy="19" r="1.8"></circle><circle cx="15" cy="19" r="1.8"></circle></svg>';
 
-            // Edit
             var editBtn = document.createElement('button');
             editBtn.className = 'edit-card-btn edit-btn';
             editBtn.setAttribute('aria-label', 'Edit');
@@ -437,7 +427,6 @@
                 '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>' +
                 '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
 
-            // Delete
             var deleteBtn = document.createElement('button');
             deleteBtn.className = 'edit-card-btn delete-btn';
             deleteBtn.setAttribute('aria-label', 'Remove');
@@ -449,17 +438,14 @@
             actions.appendChild(dragBtn);
             actions.appendChild(editBtn);
             actions.appendChild(deleteBtn);
-
             body.appendChild(info);
             body.appendChild(actions);
             card.appendChild(preview);
             card.appendChild(body);
 
-            // Edit handler
             editBtn.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); openEditPageModal(page.id); });
             editBtn.addEventListener('touchend', function (e) { e.preventDefault(); e.stopPropagation(); openEditPageModal(page.id); });
 
-            // Delete handler
             var delFn = function () {
                 removePage(page.id).then(function () {
                     if (state.editMode) {
@@ -518,8 +504,7 @@
         function clearIndicators() {
             cards.forEach(function (c) {
                 c.classList.remove('drag-over', 'marching-above', 'marching-below');
-                var labels = c.querySelectorAll('.marching-label');
-                labels.forEach(function (l) { l.remove(); });
+                c.querySelectorAll('.marching-label').forEach(function (l) { l.remove(); });
             });
         }
 
@@ -537,23 +522,16 @@
             var grid = els.editGrid;
             var rect = grid.getBoundingClientRect();
             var edgeSize = 60;
-
             scrollInterval = setInterval(function () {
                 if (!touchActive) { stopAutoScroll(); return; }
-                if (touchY < rect.top + edgeSize) {
-                    grid.scrollTop -= 8;
-                } else if (touchY > rect.bottom - edgeSize) {
-                    grid.scrollTop += 8;
-                }
+                if (touchY < rect.top + edgeSize) grid.scrollTop -= 8;
+                else if (touchY > rect.bottom - edgeSize) grid.scrollTop += 8;
             }, 16);
         }
 
         cards.forEach(function (card) {
-            // ---- Desktop mouse drag (unchanged) ----
             card.addEventListener('dragstart', function (e) {
-                if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) {
-                    e.preventDefault(); return;
-                }
+                if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) { e.preventDefault(); return; }
                 draggedCard = card;
                 draggedIndex = parseInt(card.dataset.index);
                 card.classList.add('dragging');
@@ -569,15 +547,10 @@
 
             card.addEventListener('dragover', function (e) {
                 e.preventDefault();
-                if (card !== draggedCard) {
-                    clearIndicators();
-                    card.classList.add('drag-over');
-                }
+                if (card !== draggedCard) { clearIndicators(); card.classList.add('drag-over'); }
             });
 
-            card.addEventListener('dragleave', function () {
-                card.classList.remove('drag-over');
-            });
+            card.addEventListener('dragleave', function () { card.classList.remove('drag-over'); });
 
             card.addEventListener('drop', function (e) {
                 e.preventDefault();
@@ -586,47 +559,29 @@
                 reorderPages(draggedIndex, parseInt(card.dataset.index));
             });
 
-            // ---- Mobile touch drag with marching ants ----
             card.addEventListener('touchstart', function (e) {
                 if (e.target.closest('.delete-btn') || e.target.closest('.edit-btn')) return;
-
                 if (e.target.closest('.drag-btn')) {
                     e.preventDefault();
                     beginTouchDrag(card, e.touches[0]);
                     return;
                 }
-
-                longTimer = setTimeout(function () {
-                    beginTouchDrag(card, e.touches[0]);
-                }, 400);
+                longTimer = setTimeout(function () { beginTouchDrag(card, e.touches[0]); }, 400);
             }, { passive: false });
 
             card.addEventListener('touchmove', function (e) {
-                if (!touchActive) {
-                    clearTimeout(longTimer);
-                    return;
-                }
+                if (!touchActive) { clearTimeout(longTimer); return; }
                 e.preventDefault();
-
                 var touch = e.touches[0];
-
-                // Move ghost
                 if (ghost) {
                     ghost.style.left = (touch.clientX - 40) + 'px';
                     ghost.style.top = (touch.clientY - 20) + 'px';
                 }
-
-                // Auto scroll near edges
                 startAutoScroll(touch.clientY);
-
-                // Find target
-                // Temporarily hide ghost so elementFromPoint hits cards
                 if (ghost) ghost.style.display = 'none';
                 var el = document.elementFromPoint(touch.clientX, touch.clientY);
                 if (ghost) ghost.style.display = '';
-
                 clearIndicators();
-
                 if (el) {
                     var tc = el.closest('.edit-card');
                     if (tc && tc !== draggedCard) {
@@ -634,11 +589,9 @@
                         var midY = rect.top + rect.height / 2;
                         var targetIdx = parseInt(tc.dataset.index);
                         var pageName = state.pages[targetIdx] ? state.pages[targetIdx].name : '';
-
                         if (touch.clientY < midY) {
                             tc.classList.add('marching-above');
                             touchDropPos = 'above';
-                            // Add label
                             var lbl = document.createElement('div');
                             lbl.className = 'marching-label above';
                             lbl.textContent = 'Drop above "' + pageName + '"';
@@ -668,7 +621,6 @@
                 if (draggedCard) draggedCard.classList.remove('dragging');
                 clearIndicators();
                 removeGhost();
-
                 if (touchTarget && touchTarget !== draggedCard) {
                     var targetIndex = parseInt(touchTarget.dataset.index);
                     if (touchDropPos === 'below') targetIndex++;
@@ -676,7 +628,6 @@
                     targetIndex = Math.max(0, Math.min(targetIndex, state.pages.length - 1));
                     reorderPages(draggedIndex, targetIndex);
                 }
-
                 draggedCard = null;
                 touchTarget = null;
                 touchDropPos = null;
@@ -701,12 +652,10 @@
             draggedIndex = parseInt(src.dataset.index);
             src.classList.add('dragging');
             if (navigator.vibrate) navigator.vibrate(30);
-
-            // Create floating ghost
             var pageName = state.pages[draggedIndex] ? state.pages[draggedIndex].name : '';
             ghost = document.createElement('div');
             ghost.className = 'drag-ghost';
-            ghost.textContent = '↕ ' + pageName;
+            ghost.textContent = '\u2195 ' + pageName;
             ghost.style.left = (touch.clientX - 40) + 'px';
             ghost.style.top = (touch.clientY - 20) + 'px';
             document.body.appendChild(ghost);
